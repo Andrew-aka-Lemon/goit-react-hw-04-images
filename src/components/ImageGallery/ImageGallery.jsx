@@ -1,110 +1,98 @@
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import ImageGalleryItem from 'components/ImageGallery/ImageGalleryItem';
 import Button from 'components/Button';
 import Loader from 'components/Loader';
 import Modal from 'components/Modal';
-import { ImageGalleryList } from './ImageGallery.styled';
+import { ImageGalleryList, ErrorBox } from './ImageGallery.styled';
 
 import errorImg from 'images/Cat.jpg';
-import PixabayAPI from 'components/PixabayAPI';
+import PixabayAPI from 'services/PixabayAPI';
 
-class ImageGallery extends Component {
-  state = {
-    error: null,
-    images: [],
-    currentPage: 1,
-    totalPages: null,
-    modalOpened: false,
-    isLoadingMore: false,
-    largeImage: null,
-    status: 'idle',
-  };
+const ImageGallery = ({ toSearch }) => {
+  const [error, setError] = useState(null);
+  const [images, setImages] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, settotalPages] = useState(0);
+  const [modalOpened, setModalOpened] = useState(false);
+  const [isLoadingMore, setisLoadingMore] = useState(false);
+  const [largeImage, setlargeImage] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { toSearch } = this.props;
-    const { currentPage } = this.state;
+  const prevPage = useRef();
+  const prevSearch = useRef();
 
-    // якщо ми ввели новий пошуковий запит
-    if (
-      toSearch !== prevProps.toSearch &&
-      prevState.currentPage === currentPage
-    ) {
-      this.setState({ images: [], currentPage: 1 });
+  useEffect(() => {
+    if (toSearch !== prevSearch) {
+      setImages([]);
+      setCurrentPage(1);
     }
-    //
+  }, [toSearch]);
 
-    // якщо ми ввели новий пошуковий запит або змінили сторінку пагінації
-    if (
-      prevProps.toSearch !== toSearch ||
-      prevState.currentPage !== currentPage
-    ) {
-      this.setState({ status: 'pending' });
+  useEffect(() => {
+    prevPage.current = currentPage;
+    prevSearch.current = toSearch;
+  });
 
-      PixabayAPI(toSearch, currentPage)
-        .then(data => {
-          if (data.total === 0) {
-            return Promise.reject(new Error(`What is the <<${toSearch}>> ???`));
-          }
-          this.setState(({ images }) => {
-            return {
-              images: [...images, ...data.hits],
-              status: 'ready',
-              totalPages: Math.ceil(data.totalHits / 12),
-              isLoadingMore: false,
-            };
-          });
-        })
-        .catch(error => {
-          this.setState({ error, status: 'rejected' });
-        });
-    }
-  }
-
-  loadMoreHandler = () => {
-    const { currentPage, totalPages } = this.state;
-
-    if (currentPage >= totalPages) {
+  // якщо ми ввели новий пошуковий запит або змінили сторінку пагінації
+  useEffect(() => {
+    if (toSearch === '') {
       return;
     }
 
-    this.setState(({ currentPage, isLoadingMore }) => {
-      return { currentPage: currentPage + 1, isLoadingMore: !isLoadingMore };
-    });
+    // if (toSearch !== prevSearch && currentPage === prevPage) {
+    //   setImages([]);
+    //   setCurrentPage(1);
+    // }
+
+    setisLoadingMore(i => !i);
+
+    PixabayAPI(toSearch, currentPage)
+      .then(data => {
+        if (data.total === 0) {
+          return Promise.reject(new Error(`What is the <<${toSearch}>> ???`));
+        }
+        setImages(images => [...images, ...data.hits]);
+        setError(null);
+        setisLoadingMore(i => !i);
+
+        settotalPages(Math.ceil(data.totalHits / 12));
+        setisLoadingMore(false);
+      })
+      .catch(error => {
+        setError(error);
+        setisLoadingMore(i => !i);
+      });
+  }, [currentPage, toSearch]);
+
+  const loadMoreHandler = () => {
+    if (currentPage >= totalPages) {
+      return;
+    }
+    setCurrentPage(p => p + 1);
+    setisLoadingMore(i => !i);
   };
 
-  onImageClick = Image => {
-    this.setState(({ modalOpened }) => {
-      return {
-        modalOpened: !modalOpened,
-        largeImage: Image,
-      };
-    });
+  const onImageClick = image => {
+    setlargeImage(image);
+    setModalOpened(m => !m);
   };
 
-  toggleModal = () => {
-    this.setState(({ modalOpened }) => {
-      return { modalOpened: !modalOpened };
-    });
+  const toggleModal = () => {
+    setModalOpened(m => !m);
   };
 
-  render() {
-    const { images, status } = this.state;
-    if (status === 'idle') {
-      return (
+  // render() {
+
+  return (
+    <>
+      {images.length === 0 && error === null && isLoadingMore === false && (
         <h1 style={{ textAlign: 'center' }}>
           What do you want to look on ? Put the search above
         </h1>
-      );
-    }
-
-    if (status === 'pending') {
-      return <Loader />;
-    }
-
-    if (status === 'ready') {
-      return (
+      )}
+      {isLoadingMore && <Loader />}
+      {images.length > 0 && (
         <>
           <ImageGalleryList>
             {images.map(image => {
@@ -112,44 +100,30 @@ class ImageGallery extends Component {
                 <ImageGalleryItem
                   key={image.id}
                   image={image}
-                  openModal={this.onImageClick}
+                  openModal={onImageClick}
                 />
               );
             })}
           </ImageGalleryList>
-          {this.state.isLoadingMore && <Loader />}
-          {this.state.totalPages > 1 && !this.state.isLoadingMore && (
-            <Button clickHandler={this.loadMoreHandler} />
+          {isLoadingMore && <Loader />}
+          {totalPages > 1 && currentPage < totalPages && !isLoadingMore && (
+            <Button clickHandler={loadMoreHandler} />
           )}
-          {this.state.modalOpened && (
-            <Modal
-              bigImage={this.state.largeImage}
-              toggleModal={this.toggleModal}
-            />
+          {modalOpened && (
+            <Modal bigImage={largeImage} toggleModal={toggleModal} />
           )}
         </>
-      );
-    }
-
-    if (status === 'rejected') {
-      return (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexDirection: 'column',
-          }}
-        >
-          <h1 style={{ textAlign: 'center', color: 'red' }}>
-            {this.state.error.message}
-          </h1>
+      )}
+      {error !== null && (
+        <ErrorBox>
+          <h1 style={{ color: 'red' }}>{error.message}</h1>
           <img src={errorImg} alt="" />
-        </div>
-      );
-    }
-  }
-}
+        </ErrorBox>
+      )}
+    </>
+  );
+};
+// }
 
 ImageGallery.propTypes = {
   toSearch: PropTypes.string.isRequired,

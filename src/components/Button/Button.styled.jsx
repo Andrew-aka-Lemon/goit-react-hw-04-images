@@ -30,8 +30,13 @@ const ButtonWrapper = styled.div`
   display: flex;
   justify-content: center;
 
-  margin-top: 16px;
-  margin-bottom: 16px;
+  position: sticky;
+  /* left: 50vw; */
+  bottom: 10px;
+  /* transform: translateX(-50%); */
+
+  /* margin-top: 16px;
+  margin-bottom: 16px; */
 `;
 
 export { LoadMoreButton, ButtonWrapper };

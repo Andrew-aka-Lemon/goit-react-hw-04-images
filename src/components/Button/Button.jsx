@@ -4,7 +4,7 @@ import { ButtonWrapper, LoadMoreButton } from './Button.styled';
 
 const Button = ({ clickHandler }) => {
   return (
-    <ButtonWrapper cl>
+    <ButtonWrapper>
       <LoadMoreButton type="button" onClick={clickHandler}>
         Load more
       </LoadMoreButton>

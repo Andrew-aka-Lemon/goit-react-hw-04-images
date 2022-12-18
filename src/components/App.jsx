@@ -1,24 +1,28 @@
 import SearchBar from './Searchbar';
 import ImageGallery from './ImageGallery';
-import { Component } from 'react';
+import { useState } from 'react';
+import styled from 'styled-components';
 
-class App extends Component {
-  state = {
-    searchInput: '',
+const App = () => {
+  const [searchInput, setsearchInput] = useState('');
+
+  const searchInputHandler = input => {
+    setsearchInput(input);
   };
 
-  searchInputHandler = input => {
-    this.setState({ searchInput: input });
-  };
+  return (
+    <Application>
+      <SearchBar onSubmit={searchInputHandler} />
+      <ImageGallery toSearch={searchInput} />
+    </Application>
+  );
+};
 
-  render() {
-    return (
-      <>
-        <SearchBar onSubmit={this.searchInputHandler} />
-        <ImageGallery toSearch={this.state.searchInput} />
-      </>
-    );
-  }
-}
+const Application = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 16px;
+  padding-bottom: 24px;
+`;
 
 export { App };
