@@ -9,6 +9,7 @@ import { ImageGalleryList, ErrorBox } from './ImageGallery.styled';
 
 import errorImg from 'images/Cat.jpg';
 import PixabayAPI from 'services/PixabayAPI';
+// import { smoothScroll } from 'utils/smoothScroll';
 
 const ImageGallery = ({ toSearch }) => {
   const [error, setError] = useState(null);
@@ -19,20 +20,13 @@ const ImageGallery = ({ toSearch }) => {
   const [isLoadingMore, setisLoadingMore] = useState(false);
   const [largeImage, setlargeImage] = useState(null);
 
-  const prevPage = useRef();
-  const prevSearch = useRef();
+  const prevPage = useRef(1);
+  const prevSearch = useRef('');
 
   useEffect(() => {
-    if (toSearch !== prevSearch) {
-      setImages([]);
-      setCurrentPage(1);
-    }
+    setCurrentPage(1);
+    setImages([]);
   }, [toSearch]);
-
-  useEffect(() => {
-    prevPage.current = currentPage;
-    prevSearch.current = toSearch;
-  });
 
   // якщо ми ввели новий пошуковий запит або змінили сторінку пагінації
   useEffect(() => {
@@ -40,7 +34,7 @@ const ImageGallery = ({ toSearch }) => {
       return;
     }
 
-    // if (toSearch !== prevSearch && currentPage === prevPage) {
+    // if (toSearch !== prevSearch.current && currentPage === prevPage.current) {
     //   setImages([]);
     //   setCurrentPage(1);
     // }
@@ -82,7 +76,10 @@ const ImageGallery = ({ toSearch }) => {
     setModalOpened(m => !m);
   };
 
-  // render() {
+  useEffect(() => {
+    prevPage.current = currentPage;
+    prevSearch.current = toSearch;
+  });
 
   return (
     <>
@@ -123,7 +120,6 @@ const ImageGallery = ({ toSearch }) => {
     </>
   );
 };
-// }
 
 ImageGallery.propTypes = {
   toSearch: PropTypes.string.isRequired,
