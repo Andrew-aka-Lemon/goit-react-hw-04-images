@@ -19,32 +19,29 @@ const ImageGallery = ({ toSearch }) => {
   const [modalOpened, setModalOpened] = useState(false);
   const [isLoadingMore, setisLoadingMore] = useState(false);
   const [largeImage, setlargeImage] = useState(null);
+  const [querry, setQuerry] = useState('');
 
   const prevPage = useRef(1);
   const prevSearch = useRef('');
 
   useEffect(() => {
+    setQuerry(toSearch);
     setCurrentPage(1);
     setImages([]);
   }, [toSearch]);
 
   // якщо ми ввели новий пошуковий запит або змінили сторінку пагінації
   useEffect(() => {
-    if (toSearch === '') {
+    if (querry === '') {
       return;
     }
 
-    // if (toSearch !== prevSearch.current && currentPage === prevPage.current) {
-    //   setImages([]);
-    //   setCurrentPage(1);
-    // }
-
     setisLoadingMore(i => !i);
 
-    PixabayAPI(toSearch, currentPage)
+    PixabayAPI(querry, currentPage)
       .then(data => {
         if (data.total === 0) {
-          return Promise.reject(new Error(`What is the <<${toSearch}>> ???`));
+          return Promise.reject(new Error(`What is the <<${querry}>> ???`));
         }
         setImages(images => [...images, ...data.hits]);
         setError(null);
@@ -57,7 +54,7 @@ const ImageGallery = ({ toSearch }) => {
         setError(error);
         setisLoadingMore(i => !i);
       });
-  }, [currentPage, toSearch]);
+  }, [currentPage, querry]);
 
   const loadMoreHandler = () => {
     if (currentPage >= totalPages) {
